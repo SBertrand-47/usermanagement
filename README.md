@@ -19,19 +19,21 @@ Our User Registration and Authentication System is a secure and robust solution 
 
 ## System Features
 
-1. **User Registration**: New users can register by providing necessary details including email, password, first name, last name, gender, age, date of birth, marital status, nationality, and profile photo.
+Welcome to our web application. If you're accessing it locally, the application is available at http://localhost:5000.
 
-2. **Password Strength Check**: The system checks the strength of the password during registration and password reset, ensuring it's not weak. The password must be at least 8 characters long, and should include at least one uppercase letter, one lowercase letter, one digit, and one special character.
+1. **Account Registration:** Begin by clicking on the "Register" button to set up a new account. Please ensure that you fill out all required fields, including the upload of your profile picture, as this is mandatory during the registration process.
 
-3. **Email Verification**: After successful registration, an email verification link is sent to the user's email.
+2. **Email Verification:** After registering, you will receive an email with a verification link. Please click on this link to confirm your email address. This verification step is essential for the security of your account.
 
-4. **Identity Verification**: In addition to email verification, users are required to upload a passport or national identification card for verification.
+3. **Logging In:** Upon verification, you may log in using your registered email and password. Note that for added security, our system will send an OTP (One-Time Password) to your email each time you attempt to log in. Please ensure your email address is valid and accessible. The OTP will expire after 5 minutes, and you are allowed up to 3 attempts to input the correct OTP.
 
-5. **Login**: Registered and verified users can log in using their email and password. OTP will be sent on their email as 2FA
+4. **Password Recovery:** In case you forget your password, simply click on the "Forgot Password" button on the login page. Enter your email address and click "Reset Password". You will receive an email with a one-time use link to reset your password.
 
-6. **Admin Dashboard**: There is a separate dashboard for administrators.
+5. **Profile Verification:** Once logged in, you may wish to verify your profile. Depending on your account status, you will fall into one of three categories: UNVERIFIED, PENDING, or VERIFIED. If your account is unverified, a verification button will be available on your dashboard. This button will not be visible if your profile is pending verification or has already been verified.
 
-7. **Password Reset**: If a user forgets their password, they can request a password reset. A password reset link is sent to the user's email.
+6. **Verification Status Indicators:** To easily ascertain your verification status, you will see an icon next to your name on your dashboard: a red cross signifies an unverified account, a yellow watch indicates a pending verification, and a blue tick denotes a verified account.
+
+Thank you for choosing our application. We look forward to providing you with a secure and user-friendly experience.
 
 ## Installation & Setup
 
