@@ -394,7 +394,7 @@ def configure_routes(app):
     @app.route('/verify_user/<user_id>', methods=['GET'])
     def verify_user(user_id):
         # Ensure the user is logged in and is an admin
-        if 'email' not in session or session['role'] != 'admin':
+        if 'email' not in session or session['user_role'] != 'admin':
             flash('Unauthorized access', 'error')
             return redirect(url_for('login'))
 
@@ -421,7 +421,7 @@ def configure_routes(app):
     @app.route('/reject_user/<user_id>', methods=['GET'])
     def reject_user(user_id):
         # Ensure the user is logged in and is an admin
-        if 'email' not in session or session['role'] != 'admin':
+        if 'email' not in session or session['user_role'] != 'admin':
             flash('Unauthorized access', 'error')
             return redirect(url_for('login'))
 
