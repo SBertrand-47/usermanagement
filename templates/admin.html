@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-center my-4 handwritten">Admin Dashboard</h1>
+
+<div class="row d-flex justify-content-center">
+    <div class="card">
+        <div class="card-header text-center">
+            Pending Verifications
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">First Name</th>
+                        <th scope="col">Last Name</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">ID</th>
+                        <th scope="col">Document</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.first_name }}</td>
+                        <td>{{ user.last_name }}</td>
+                        <td>{{ user.user_email }}</td>
+                        <td>{{ user.nid_or_passport }}</td>
+                        <td>
+                            <button type="button" class="btn btn-link" data-toggle="modal" data-target="#documentModal{{user.id}}">
+                                View Document
+                            </button>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('verify_user', user_id=user.id) }}" class="btn btn-success">Verify</a>
+                            <a href="{{ url_for('reject_user', user_id=user.id) }}" class="btn btn-danger">Reject</a>
+                        </td>
+                    </tr>
+
+                <!-- The Modal -->
+                    <div class="modal fade" id="documentModal{{user.id}}">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <!-- Modal Header -->
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Verification Document</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+
+                                <!-- Modal body -->
+                                <div class="modal-body">
+                                    <img src="{{ url_for('static', filename='user_images/verification_documents/' + user.document_image) }}" class="img-fluid" alt="Verification Document">
+                                </div>
+
+                                <!-- Modal footer -->
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                </tbody>
+            </table>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}
+

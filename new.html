@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h1 class="text-center">Registration Form</h1>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="user_email">Email:</label>
+                                    <input type="email" class="form-control" id="user_email" name="user_email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password:</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm_password">Confirm Password:</label>
+                                    <input type="password" class="form-control" id="confirm_password"
+                                        name="confirm_password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="password_strength">Password Strength:</label>
+                                    <div id="password_strength" class="password-strength">
+                                        <div class="password-strength-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="first_name">First Name:</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name">Last Name:</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gender">Gender:</label>
+                                <select class="form-control" id="gender" name="gender" required>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="age">Age:</label>
+                                <input type="number" class="form-control" id="age" name="age" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_of_birth">Date of Birth:</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="marital_status">Marital Status:</label>
+                                <select class="form-control" id="marital_status" name="marital_status" required>
+                                    <option value="single">Single</option>
+                                    <option value="married">Married</option>
+                                    <option value="divorced">Divorced</option>
+                                    <option value="widowed">Widowed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="nationality">Nationality:</label>
+                                <input type="text" class="form-control" id="nationality" name="nationality" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="profile_photo">Profile Photo:</label>
+                                <input type="file" class="form-control-file" id="profile_photo" name="profile_photo">
+                            </div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+                <!-- Password Strength Bar goes here -->
+                <button type="submit" class="btn btn-primary mt-3">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    // Function to calculate password strength and update the complexity bar
+    function updatePasswordStrength() {
+        var password = document.getElementById('password').value;
+        var strengthBar = document.querySelector('.password-strength-bar');
+        var strength = 0;
+
+        // Calculate password strength
+        if (password.match(/[a-z]+/)) {
+            strength += 1;
+        }
+        if (password.match(/[A-Z]+/)) {
+            strength += 1;
+        }
+        if (password.match(/[0-9]+/)) {
+            strength += 1;
+        }
+        if (password.match(/[$@#&!]+/)) {
+            strength += 1;
+        }
+        if (password.length >= 8) {
+            strength += 1;
+        }
+
+        // Update the width and color of the complexity bar based on the strength
+        var barWidth = strength * 20;
+        strengthBar.style.width = barWidth + '%';
+
+        // Remove previous color classes
+        strengthBar.classList.remove('weak', 'medium', 'strong');
+
+        // Add color class based on strength
+        if (barWidth < 40) {
+            strengthBar.classList.add('weak');
+        } else if (barWidth < 80) {
+            strengthBar.classList.add('medium');
+        } else {
+            strengthBar.classList.add('strong');
+        }
+    }
+
+    // Event listener for password field to update the complexity bar on input
+    document.getElementById('password').addEventListener('input', updatePasswordStrength);
+</script>
+
+{% endblock %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.4.0/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.4.0/js/bootstrap.bundle.min.js"></script>

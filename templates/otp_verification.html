@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+body {
+    min-height: 75rem;
+    padding-top: 4.5rem;
+    margin: 0;
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/static/images/bg3.jpg');
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 10px;
+    transition: all 0.3s;
+    overflow: hidden;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    margin: auto;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.card-body h5 {
+    font-weight: bold;
+    color: #333;
+}
+
+.card-body h6 {
+    color: #777;
+}
+
+.card-body p {
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.card-body p i {
+    margin-right: 10px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.btn {
+    margin: 10px 0;
+    transition: all 0.3s;
+    color: #fff;
+    background-color: #333;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    background-color: #555;
+}
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card mt-5">
+                <div class="card-header text-center">
+                    OTP Verification
+                </div>
+                <div class="card-body">
+                    <form id="otpForm" method="POST" class="form">
+                        <div class="form-group">
+                            <label for="otp">Enter your OTP:</label>
+                            <input type="text" id="otp" name="otp" class="form-control" required>
+                        </div>
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn">Verify</button>
+                        </div>
+                    </form>
+                    <div class="text-center">
+                        <p id="timer" class="mb-1"></p>
+                        <p id="attempts"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://unpkg.com/sweetalert2@11"></script>
+
+
+
+
+  <script>
+    // Initialize the countdown timer
+    var homeUrl = "{{ url_for('index') }}";
+      var expiry = new Date('{{ otp_expiry }}');
+      var countdown = setInterval(function() {
+        var now = new Date().getTime();
+        var distance = expiry - now;
+        var homeUrl = "{{ url_for('index') }}"; // Initialize homeUrl here
+
+
+
+      // If the OTP has expired, stop the countdown
+      if (distance < 0) {
+        clearInterval(countdown);
+        document.getElementById('timer').innerHTML = "OTP expired";
+        Swal.fire({
+          title: 'OTP expired',
+          text: 'Redirecting to login.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        }).then((result) => {
+          window.location.href = "{{ login_url }}"; // Redirect to the login page
+        });
+        return;
+      }
+
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById('timer').innerHTML = minutes + "m " + seconds + "s left to enter OTP";
+    }, 1000);
+
+    // Initialize the attempts counter
+    var attemptsLeft = {{ attempts_left }};
+    document.getElementById('attempts').innerHTML = attemptsLeft + " attempts left";
+
+    // Handle the form submission
+    document.getElementById('otpForm').addEventListener('submit', function(event) {
+    var now = new Date().getTime();
+    var distance = expiry - now;
+
+    // If the OTP has expired, prevent form submission
+    if (distance < 0) {
+        Swal.fire({
+            title: 'OTP expired',
+            text: 'Redirecting to login.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        }).then((result) => {
+            window.location.href = "{{ login_url }}"; // Redirect to the login page
+        });
+        return;
+    }
+
+    event.preventDefault();
+
+    fetch('/otp_verification', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(event.target)) // event.target is the form
+    }).then(response => response.json()).then(data => {
+        if (data.status === 'verified') {
+            window.location.href = homeUrl; // Redirect to the homepage
+        } else if (data.status === 'expired' || data.status === 'max_attempts_exceeded') {
+            Swal.fire({
+                title: 'Error',
+                text: 'Maximum attempts exceeded or OTP expired. Redirecting to login.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            }).then((result) => {
+                window.location.href = "{{ login_url }}"; // Redirect to the login page
+            });
+        } else {
+            attemptsLeft--;
+            document.getElementById('attempts').innerHTML = attemptsLeft + " attempts left";
+            if (attemptsLeft <= 0) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Maximum attempts exceeded. Redirecting to login.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    window.location.href = "{{ login_url }}";
+                });
+            } else {
+                Swal.fire({
+                    title: 'Incorrect OTP',
+                    text: 'You have ' + attemptsLeft + ' attempts left.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    });
+});
+
+      console.log(homeUrl);
+
+
+      </script>
+      {% endblock %}
