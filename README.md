@@ -80,18 +80,17 @@ you are unverified, but it won't appear if your profile is pending (being verifi
 
 ## Admin Usage
 
-1. To log in as an administrator, you simply have to input administrative credentials and the system will automatically redirect your to the admin dashboard for simplicity sake, to try the admin dashboard 
-use the following credentials
+1. Administrative Login: To access the administrative interface, you'll need to use the dedicated administrative credentials. Upon successful login, you will be automatically redirected to the admin dashboard. For demonstration purposes, please use the following credentials:
     ```
 	email: sibomanabertrand@gmail.com
 	password : CyberSecure2023
     ```
-for demo purpose the admin will not be required to provide an OTP(one time password) to login.
+Please note that, unlike regular user accounts, the administrative account does not require OTP (One-Time Password) authentication for login, simplifying the process.
 
 
-2. After the admin login, he will be able to accept the submitted verification request, or reject them, an email will be sent to the user to let them know if they were approved or not.
+2. Admin Dashboard and Permissions: Once logged in as an administrator, you have access to several advanced features. This includes the ability to review and process verification requests. Upon a decision on a verification request, an automated email will be sent to the respective user, communicating whether their request was approved or denied.
 
-3. As an administrator, you can view all registered users, verify their identities, and manage user accounts.
+3. User Management: As an administrator, you have a comprehensive view of all users that requested verification. This allows for efficient identity verification and streamlined management of user accounts.
 
 ## Contributing
 
