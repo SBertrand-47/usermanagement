@@ -8,7 +8,6 @@ app.config.from_object(Config)
 db.init_app(app)
 
 with app.app_context():
-    db.session.expire_all()
     db.create_all()
 
 configure_routes(app)
