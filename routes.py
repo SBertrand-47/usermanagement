@@ -83,7 +83,7 @@ def configure_routes(app):
             print(result)
 
             if not result['success']:
-                flash('Invalid reCAPTCHA. Please try again.', 'error')
+                flash('Invalid reCAPTCHA. Please try again.', 'danger')
                 return render_template('register.html', site_key=os.getenv('RECAPTCHA_SITE_KEY'))
 
 
@@ -432,9 +432,13 @@ def configure_routes(app):
 
     def handle_verification_submission(user):
         # Get the ID type and ID document from the form
-        id_number = request.form['id_number']
-        id_type = request.form['id_type']
-        id_document = request.files['id_document']
+        id_number = request.form.get('id_number')
+        id_type = request.form.get('id_type')
+        id_document = request.files.get('id_document')
+
+        if id_number is None or id_type is None or id_document is None:
+            flash('All fields are required.', 'error')
+            return redirect(url_for('verify_profile'))
 
         if id_document and allowed_file(id_document.filename):
             save_verification_document(user, id_number, id_type, id_document)
