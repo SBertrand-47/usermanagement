@@ -423,7 +423,8 @@ def configure_routes(app):
         if request.method == 'POST':
             return handle_verification_submission(user)
 
-        return render_template('verify_profile.html', user=user)
+        # Render index.html when OTP is found in session
+        return render_template('index.html', user=user)
 
     def handle_verification_submission(user):
         # Get the ID type and ID document from the form
