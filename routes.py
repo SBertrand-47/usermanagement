@@ -67,14 +67,14 @@ def configure_routes(app):
     @app.route("/register", methods=["GET", "POST"])
     def register():
         if request.method == 'GET':
-            return render_template('register.html', site_key='6LdhECEmAAAAAGRlWTxwkcg3czSjUkjQ9xQ1EtRi')
+            return render_template('register.html', site_key=os.getenv('RECAPTCHA_SITE_KEY'))
 
         if request.method == 'POST':
             recaptcha_response = request.form.get('g-recaptcha-response')
 
             # Validate reCAPTCHA
             r = requests.post('https://www.google.com/recaptcha/api/siteverify', data={
-                'secret': '6LdhECEmAAAAANz6ckVb5OoeRaPbS1GPeZXz28PL',
+                'secret': os.getenv('RECAPTCHA_SECRET_KEY'),
                 'response': recaptcha_response
             })
 
