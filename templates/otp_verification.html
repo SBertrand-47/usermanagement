@@ -113,7 +113,7 @@ body {
         let countdown = initializeCountdown(otpExpiry);
 
         // Initialize the attempts counter
-        const attemptsLeft = {{ attempts_left }};
+        let attemptsLeft = {{ attempts_left }};
         document.getElementById('attempts').textContent = `${attemptsLeft} attempts left`;
 
         // Handle form submission
@@ -217,9 +217,5 @@ body {
             });
         }
     }
-
-
-
-
       </script>
       {% endblock %}
