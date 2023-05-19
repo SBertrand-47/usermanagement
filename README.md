@@ -19,7 +19,7 @@ Our User Registration and Authentication System is a secure and robust solution 
 
 ## System Features
 
-Welcome to our web application. If you're accessing it locally, the application is available at http://localhost:5000.
+Welcome to our web application. If you're accessing it locally, the application is available at http://localhost:5000 or https://user-account-mgt.herokuapp.com/
 
 1. **Account Registration:** Begin by clicking on the "Register" button to set up a new account. Please ensure that you fill out all required fields, including the upload of your profile picture, as this is mandatory during the registration process.
 
