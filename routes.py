@@ -155,7 +155,20 @@ def configure_routes(app):
     @nocache
     def login():
         if 'email' in session:
-            return handle_logged_in_user()
+            user = App_Users.query.filter_by(user_email=session['email']).first()
+            if user.is_active:
+                if 'otp' in session:
+                    return redirect(url_for('otp_verification'))
+                return handle_logged_in_user()
+            else:
+                flash('Your account has not been activated yet. Please check your email and verify your account.',
+                      'error')
+                return redirect(url_for('login'))
+
+        if request.method == 'POST':
+            return handle_login_attempt()
+
+        return render_template('login.html')
 
         if request.method == 'POST':
             return handle_login_attempt()
