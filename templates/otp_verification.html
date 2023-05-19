@@ -105,20 +105,15 @@ body {
 
 
   <script>
-    // Load required scripts
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize the countdown timer
-        const homeUrl = "{{ url_for('index') }}";
-        const otpExpiry = new Date('{{ otp_expiry }}');
-        let countdown = initializeCountdown(otpExpiry);
+    // Initialize the countdown timer
+    const homeUrl = "{{ url_for('index') }}";
+    const otpExpiry = new Date('{{ otp_expiry }}');
+    let countdown = initializeCountdown(otpExpiry);
 
-        // Initialize the attempts counter
-        let attemptsLeft = {{ attempts_left }};
-        document.getElementById('attempts').textContent = `${attemptsLeft} attempts left`;
-
-        // Handle form submission
-        document.getElementById('otpForm').addEventListener('submit', handleSubmit);
-    });
+    // Initialize the attempts counter
+    let attemptsLeft = {{ attempts_left }};
+    document.getElementById('attempts').textContent = `${attemptsLeft} attempts left`;
 
     function initializeCountdown(expiry) {
         return setInterval(() => {
@@ -153,28 +148,6 @@ body {
 
         document.getElementById('timer').textContent = `${minutes}m ${seconds}s left to enter OTP`;
     }
-
-    function handleSubmit(event) {
-        const now = new Date().getTime();
-        const timeLeft = expiry - now;
-
-        if (timeLeft < 0) {
-            event.preventDefault();
-            handleExpiredOTP();
-        }
-    }
-
-
-   document.getElementById('otpForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-
-    fetch('/otp_verification', {
-        method: 'POST',
-        body: new URLSearchParams(new FormData(event.target))
-    })
-    .then(response => response.json())
-    .then(data => handleOTPResponse(data));
-});
 
     function handleOTPResponse(data) {
         switch (data.status) {
@@ -217,5 +190,21 @@ body {
             });
         }
     }
-      </script>
+
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        fetch('/otp_verification', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(event.target))
+        })
+        .then(response => response.json())
+        .then(data => handleOTPResponse(data));
+    }
+
+    // Handle form submission
+    document.getElementById('otpForm').addEventListener('submit', handleSubmit);
+});
+
+  </script>
       {% endblock %}
