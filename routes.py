@@ -201,14 +201,15 @@ def configure_routes(app):
             flash('Invalid username or password', 'error')
             return redirect(url_for('login'))
 
+        # if the user is not active, redirect them to the login page
+        if not user.is_active:
+            flash('Your account has not been activated yet. Please check your email and verify your account.', 'error')
+            return redirect(url_for('login'))
+
         session['email'] = email
         session['user_role'] = user.user_role
 
-        if user.is_active:
-            return handle_active_user(user)
-
-        flash('Your account has not been activated yet. Please check your email and verify your account.', 'error')
-        return redirect(url_for('login'))
+        return handle_active_user(user)
 
     def handle_active_user(user):
         if user.user_role == 'admin':
