@@ -179,6 +179,8 @@ def configure_routes(app):
     @app.route("/otp_verification", methods=["GET", "POST"])
     @nocache
     def otp_verification():
+        if 'email' not in session:
+            return redirect(url_for('login'))
         if request.method == 'POST':
             otp = request.form['otp']
             if 'otp' in session:
