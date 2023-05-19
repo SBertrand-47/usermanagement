@@ -123,5 +123,40 @@ body {
         </div>
     </div>
 </div>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var idType = document.getElementById('idType').value;
+    var idNumber = document.getElementById('id_number').value;
+    var idDocument = document.getElementById('idDocument').files;
+
+    // Check if all fields are filled
+    if (!idType || !idNumber || idDocument.length === 0) {
+        return swal("Error!", "Please fill in all the fields!", "error");
+    }
+
+    // Check if idNumber is correct based on idType
+    if (idType === 'passport' && !/^PC\d{6}$/.test(idNumber)) {
+        return swal("Error!", "Passport ID should start with 'PC' followed by 6 digits!", "error");
+    }
+
+    if (idType === 'national_id' && !/^\d{10}$/.test(idNumber)) {
+        return swal("Error!", "National ID should have 10 digits!", "error");
+    }
+
+    // Check if uploaded file is an image
+    var fileExtension = idDocument[0].name.split('.').pop().toLowerCase();
+    var allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+    if (allowedExtensions.indexOf(fileExtension) < 0) {
+        return swal("Error!", "Please upload an image file (e.g., jpg, jpeg, png, gif)!", "error");
+    }
+
+    // If everything is correct, submit the form
+    this.submit();
+});
+</script>
 
 {% endblock %}
