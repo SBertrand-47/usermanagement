@@ -13,7 +13,7 @@ from random import randint
 from datetime import datetime, timedelta
 import functools
 import re
-
+import requests
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 serializer = URLSafeTimedSerializer(SECRET_KEY)
@@ -67,6 +67,21 @@ def configure_routes(app):
     @app.route("/register", methods=["GET", "POST"])
     def register():
         if request.method == 'POST':
+            recaptcha_response = request.form.get('g-recaptcha-response')
+
+            # Validate reCAPTCHA
+            r = requests.post('https://www.google.com/recaptcha/api/siteverify', data={
+                'secret': os.getenv('RECAPTCHA_SECRET_KEY'),
+                'response': recaptcha_response
+            })
+
+            result = r.json()
+
+            if not result['success']:
+                flash('Invalid reCAPTCHA. Please try again.', 'error')
+                return render_template('register.html')
+
+
             email, password, hashed_password, first_name, last_name, gender, age, date_of_birth, \
                 marital_status, nationality, profile_photo = get_form_data(
                 request)
