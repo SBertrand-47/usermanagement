@@ -262,8 +262,12 @@ def configure_routes(app):
                         return jsonify({'status': 'incorrect', 'attempts_left': 3 - session['otp_attempts']})
             else:
                 return jsonify({'status': 'incorrect', 'attempts_left': 3 - session['otp_attempts']})
-        return render_template('otp_verification.html', otp_expiry=session['otp_expiry'],
-                               attempts_left=3 - session['otp_attempts'], login_url=url_for('login'))
+
+        otp_expiry = session.get('otp_expiry', None)
+        otp_attempts = session.get('otp_attempts', None)
+        attempts_left = 3 - otp_attempts if otp_attempts is not None else 3
+        return render_template('otp_verification.html', otp_expiry=otp_expiry, attempts_left=attempts_left,
+                               login_url=url_for('login'))
 
     #Verifying the Email, before login-in
 
