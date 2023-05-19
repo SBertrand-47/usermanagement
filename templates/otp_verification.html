@@ -105,130 +105,120 @@ body {
 
 
   <script>
-      // The frist task of validating the given OTP on the client side.
+    // Load required scripts
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize the countdown timer
+        const homeUrl = "{{ url_for('index') }}";
+        const otpExpiry = new Date('{{ otp_expiry }}');
+        let countdown = initializeCountdown(otpExpiry);
 
-      $(document).ready(function () {
-        $("#otpForm").on("submit", function (e) {
-            e.preventDefault();
+        // Initialize the attempts counter
+        const attemptsLeft = {{ attempts_left }};
+        document.getElementById('attempts').textContent = `${attemptsLeft} attempts left`;
 
-            var otp = $("#otp").val();
+        // Handle form submission
+        document.getElementById('otpForm').addEventListener('submit', handleSubmit);
+    });
 
-            // Check if OTP is a six-digit number
-            var isValidOtp = /^\d{6}$/.test(otp);
+    function initializeCountdown(expiry) {
+        return setInterval(() => {
+            const now = new Date().getTime();
+            const timeLeft = expiry - now;
 
-            if (!isValidOtp) {
-                swal({
-                    title: "Invalid OTP",
-                    text: "OTP should be exactly 6 digits.",
-                    icon: "error",
-                    button: "OK",
-                });
+            if (timeLeft < 0) {
+                handleExpiredOTP();
                 return;
             }
 
-            // If OTP is valid, proceed with form submission
-            this.submit();
-        });
-    });
+            updateTimer(timeLeft);
+        }, 1000);
+    }
 
-      //End of client validation
-
-
-    // Initialize the countdown timer
-    var homeUrl = "{{ url_for('index') }}";
-      var expiry = new Date('{{ otp_expiry }}');
-      var countdown = setInterval(function() {
-        var now = new Date().getTime();
-        var distance = expiry - now;
-        var homeUrl = "{{ url_for('index') }}"; // Initialize homeUrl here
-
-
-
-      // If the OTP has expired, stop the countdown
-      if (distance < 0) {
+    function handleExpiredOTP() {
         clearInterval(countdown);
-        document.getElementById('timer').innerHTML = "OTP expired";
-        Swal.fire({
-          title: 'OTP expired',
-          text: 'Redirecting to login.',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        }).then((result) => {
-          window.location.href = "{{ login_url }}"; // Redirect to the login page
-        });
-        return;
-      }
-
-      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      document.getElementById('timer').innerHTML = minutes + "m " + seconds + "s left to enter OTP";
-    }, 1000);
-
-    // Initialize the attempts counter
-    var attemptsLeft = {{ attempts_left }};
-    document.getElementById('attempts').innerHTML = attemptsLeft + " attempts left";
-
-    // Handle the form submission
-    document.getElementById('otpForm').addEventListener('submit', function(event) {
-    var now = new Date().getTime();
-    var distance = expiry - now;
-
-    // If the OTP has expired, prevent form submission
-    if (distance < 0) {
+        document.getElementById('timer').textContent = "OTP expired";
         Swal.fire({
             title: 'OTP expired',
             text: 'Redirecting to login.',
             icon: 'error',
             confirmButtonText: 'OK'
-        }).then((result) => {
+        }).then(() => {
             window.location.href = "{{ login_url }}"; // Redirect to the login page
         });
-        return;
     }
 
+    function updateTimer(timeLeft) {
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+        document.getElementById('timer').textContent = `${minutes}m ${seconds}s left to enter OTP`;
+    }
+
+    function handleSubmit(event) {
+        const now = new Date().getTime();
+        const timeLeft = expiry - now;
+
+        if (timeLeft < 0) {
+            event.preventDefault();
+            handleExpiredOTP();
+        }
+    }
+
+
+   document.getElementById('otpForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
     fetch('/otp_verification', {
         method: 'POST',
-        body: new URLSearchParams(new FormData(event.target)) // event.target is the form
-    }).then(response => response.json()).then(data => {
-        if (data.status === 'verified') {
-            window.location.href = homeUrl; // Redirect to the homepage
-        } else if (data.status === 'expired' || data.status === 'max_attempts_exceeded') {
-            Swal.fire({
-                title: 'Error',
-                text: 'Maximum attempts exceeded or OTP expired. Redirecting to login.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            }).then((result) => {
-                window.location.href = "{{ login_url }}"; // Redirect to the login page
-            });
-        } else {
-            attemptsLeft--;
-            document.getElementById('attempts').innerHTML = attemptsLeft + " attempts left";
-            if (attemptsLeft <= 0) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Maximum attempts exceeded. Redirecting to login.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                }).then((result) => {
-                    window.location.href = "{{ login_url }}";
-                });
-            } else {
-                Swal.fire({
-                    title: 'Incorrect OTP',
-                    text: 'You have ' + attemptsLeft + ' attempts left.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
-        }
-    });
+        body: new URLSearchParams(new FormData(event.target))
+    })
+    .then(response => response.json())
+    .then(data => handleOTPResponse(data));
 });
 
-      console.log(homeUrl);
+    function handleOTPResponse(data) {
+        switch (data.status) {
+            case 'verified':
+                window.location.href = homeUrl;
+                break;
+            case 'expired':
+            case 'max_attempts_exceeded':
+                showAlertAndRedirect('Error', 'Maximum attempts exceeded or OTP expired. Redirecting to login.', 'error', "{{ login_url }}");
+                break;
+            default:
+                handleIncorrectOTP();
+                break;
+        }
+    }
+
+    function showAlertAndRedirect(title, text, icon, redirectUrl) {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            confirmButtonText: 'OK'
+        }).then(() => {
+            window.location.href = redirectUrl;
+        });
+    }
+
+    function handleIncorrectOTP() {
+        attemptsLeft--;
+        document.getElementById('attempts').textContent = `${attemptsLeft} attempts left`;
+
+        if (attemptsLeft <= 0) {
+            showAlertAndRedirect('Error', 'Maximum attempts exceeded. Redirecting to login.', 'error', "{{ login_url }}");
+        } else {
+            Swal.fire({
+                title: 'Incorrect OTP',
+                text: `You have ${attemptsLeft} attempts left.`,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
+
+
 
 
       </script>
