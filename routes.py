@@ -415,6 +415,11 @@ def configure_routes(app):
         # Get the logged in user
         user = App_Users.query.filter_by(user_email=session['email']).first()
 
+        if 'otp' not in session or not user.is_active:
+            # User has not completed OTP verification or account is not active
+            flash('Please complete OTP verification first', 'error')
+            return redirect(url_for('otp_verification'))
+
         if request.method == 'POST':
             return handle_verification_submission(user)
 
