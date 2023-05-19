@@ -229,7 +229,6 @@ def configure_routes(app):
                 flash('Please log in to access this page', 'error')
                 return redirect(url_for('login'))
 
-
     @app.route("/otp_verification", methods=["GET", "POST"])
     @nocache
     def otp_verification():
@@ -251,6 +250,9 @@ def configure_routes(app):
                 # Check if OTP is correct
                 if otp == session['otp']:
                     # 'email' is already in the session
+                    session.pop('otp', None)  # Clear the 'otp' from the session
+                    session.pop('otp_expiry', None)  # Clear the 'otp_expiry' from the session
+                    session.pop('otp_attempts', None)  # Clear the 'otp_attempts' from the session
                     return jsonify({'status': 'verified'})
                 else:
                     session['otp_attempts'] += 1
@@ -423,8 +425,7 @@ def configure_routes(app):
         if request.method == 'POST':
             return handle_verification_submission(user)
 
-        # Render index.html when OTP is found in session
-        return render_template('index.html', user=user)
+        return render_template('verify_profile.html', user=user)
 
     def handle_verification_submission(user):
         # Get the ID type and ID document from the form
