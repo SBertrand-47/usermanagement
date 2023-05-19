@@ -63,109 +63,150 @@ def configure_routes(app):
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+    # Registration Route
     @app.route("/register", methods=["GET", "POST"])
     def register():
         if request.method == 'POST':
-            email = request.form['user_email']
-            password = request.form['password']
-            hashed_password = generate_password_hash(password)
-
-            first_name = request.form['first_name']
-            last_name = request.form['last_name']
-            gender = request.form['gender']
-            age = request.form['age']
-            date_of_birth = request.form['date_of_birth']
-            marital_status = request.form['marital_status']
-            nationality = request.form['nationality']
-            profile_photo = request.files.get('profile_photo', None)
+            email, password, hashed_password, first_name, last_name, gender, age, date_of_birth, \
+                marital_status, nationality, profile_photo = get_form_data(
+                request)
 
             if profile_photo is None:
-                flash('Profile picture is required.', 'danger')
-                return render_template('register.html')
+                return profile_photo_error()
 
             if not is_password_strong(password):
-                flash('Your password is too weak.', 'error')
-                return render_template('register.html')
+                return weak_password_error()
 
             if not allowed_file(profile_photo.filename):
-                flash('Invalid file format. Please upload an image file.', 'danger')
-                return render_template('register.html')
+                return invalid_file_error()
 
-            filename = secure_filename(profile_photo.filename)
-            profile_photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            filename = save_profile_photo(profile_photo)
 
-            try:
-                valid_email = validate_email(email)
-                email = valid_email["email"]
-            except EmailNotValidError as e:
-                flash(str(e))
-                return redirect(url_for('register'))
+            if email_exists(email):
+                return email_exists_error()
 
-            if App_Users.query.filter_by(user_email=email).first() is not None:
-                flash('Email already exists, please use another one or Login!', 'danger')
-                return redirect(url_for('register'))
+            new_user = create_new_user(email, hashed_password, first_name, last_name, gender, age, date_of_birth,
+                                       marital_status, nationality, filename)
 
-            new_user = App_Users(user_email=email, password=hashed_password, first_name=first_name,
-                                 last_name=last_name, gender=gender, age=age, date_of_birth=date_of_birth,
-                                 marital_status=marital_status, nationality=nationality, is_active=False,
-                                 profile_photo=filename)
-            db.session.add(new_user)
-            db.session.commit()
-
-            token = serializer.dumps(new_user.user_email, salt=os.environ.get('SECURITY_PASSWORD_SALT'))
-
-            subject = 'Welcome to Our App!'
-            body = f"Dear {first_name},\n\nThank you for signing up for our app! Please verify your email by clicking the link below:\n\n{url_for('verify_email', token=token, _external=True)}\n\nBest regards,\n\nThe App Team"
-
-            send_email(email, subject, body)
+            send_welcome_email(new_user, first_name)
 
             flash('Account created successfully! Please check your email to verify your account.', 'success')
             return redirect(url_for('login'))
 
         return render_template('register.html')
 
+    def get_form_data(request):
+        email = request.form['user_email']
+        password = request.form['password']
+        hashed_password = generate_password_hash(password)
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        gender = request.form['gender']
+        age = request.form['age']
+        date_of_birth = request.form['date_of_birth']
+        marital_status = request.form['marital_status']
+        nationality = request.form['nationality']
+        profile_photo = request.files.get('profile_photo', None)
 
+        return email, password, hashed_password, first_name, last_name, \
+            gender, age, date_of_birth, marital_status, nationality, profile_photo
+
+    def profile_photo_error():
+        flash('Profile picture is required.', 'danger')
+        return render_template('register.html')
+
+    def weak_password_error():
+        flash('Your password is too weak.', 'error')
+        return render_template('register.html')
+
+    def invalid_file_error():
+        flash('Invalid file format. Please upload an image file.', 'danger')
+        return render_template('register.html')
+
+    def save_profile_photo(profile_photo):
+        filename = secure_filename(profile_photo.filename)
+        profile_photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return filename
+
+    def email_exists(email):
+        return App_Users.query.filter_by(user_email=email).first() is not None
+
+    def email_exists_error():
+        flash('Email already exists, please use another one or Login!', 'danger')
+        return redirect(url_for('register'))
+
+    def create_new_user(email, hashed_password, first_name, last_name, gender, age, date_of_birth, marital_status,
+                        nationality, filename):
+        new_user = App_Users(user_email=email, password=hashed_password, first_name=first_name, last_name=last_name,
+                             gender=gender, age=age, date_of_birth=date_of_birth, marital_status=marital_status,
+                             nationality=nationality, is_active=False, profile_photo=filename)
+        db.session.add(new_user)
+        db.session.commit()
+        return new_user
+
+    def send_welcome_email(new_user, first_name):
+        token = serializer.dumps(new_user.user_email, salt=os.environ.get('SECURITY_PASSWORD_SALT'))
+        subject = 'Welcome to Our App!'
+        body = f"Dear {first_name},\n\nThank you for signing up for our app! Please verify your email by clicking the link below:\n\n{url_for('verify_email', token=token, _external=True)}\n\nBest regards,\n\nThe App Team"
+        send_email(new_user.user_email, subject, body)
+
+    #Login and OTP handling routes
     @app.route("/", methods=["GET", "POST"])
     @nocache
     def login():
         if 'email' in session:
-            user = App_Users.query.filter_by(user_email=session['email']).first()
-            if user.user_role == 'admin':
-                return redirect(url_for('admin'))
-            else:
-                return render_template('index.html', user=user)
+            return handle_logged_in_user()
 
         if request.method == 'POST':
-            email = request.form['user_email']
-            password = request.form['password']
-            user = App_Users.query.filter_by(user_email=email).first()
-            if user and check_password_hash(user.password, password):
-                session['email'] = email
-                session['user_role'] = user.user_role
-                if user.is_active:
-                    if user.user_role == 'admin':
-                        return redirect(url_for('admin'))
-                    else:
-                        # Generate OTP
-                        otp = str(randint(100000, 999999))
-                        # Send OTP to user's email
-                        subject = 'Your OTP'
-                        body = 'Your OTP is {}'.format(otp)
-                        send_email(email, subject, body)
-                        # Store OTP, email and expiry time in user's session
-                        session['otp'] = otp
-                        session['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=5)).strftime(
-                            '%Y-%m-%d %H:%M:%S.%f')
-                        session['otp_attempts'] = 0
-                        return redirect(url_for('otp_verification'))
-                else:
-                    flash('Your account has not been activated yet. Please check your email and verify your account.',
-                          'error')
-            else:
-                flash('Invalid username or password', 'error')
+            return handle_login_attempt()
+
         return render_template('login.html')
 
-    # Define other routes as needed
+    def handle_logged_in_user():
+        user = App_Users.query.filter_by(user_email=session['email']).first()
+
+        if user.user_role == 'admin':
+            return redirect(url_for('admin'))
+
+        return render_template('index.html', user=user)
+
+    def handle_login_attempt():
+        email = request.form['user_email']
+        password = request.form['password']
+
+        user = App_Users.query.filter_by(user_email=email).first()
+
+        if not user or not check_password_hash(user.password, password):
+            flash('Invalid username or password', 'error')
+            return redirect(url_for('login'))
+
+        session['email'] = email
+        session['user_role'] = user.user_role
+
+        if user.is_active:
+            return handle_active_user(user)
+
+        flash('Your account has not been activated yet. Please check your email and verify your account.', 'error')
+        return redirect(url_for('login'))
+
+    def handle_active_user(user):
+        if user.user_role == 'admin':
+            return redirect(url_for('admin'))
+
+        send_otp_to_user(user.user_email)
+        return redirect(url_for('otp_verification'))
+
+    def send_otp_to_user(email):
+        otp = str(randint(100000, 999999))
+
+        subject = 'Your OTP'
+        body = 'Your OTP is {}'.format(otp)
+        send_email(email, subject, body)
+
+        session['otp'] = otp
+        session['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S.%f')
+        session['otp_attempts'] = 0
+
     @app.route('/home')
     def index():
             if 'email' in session:
@@ -253,41 +294,90 @@ def configure_routes(app):
     @nocache
     def forgot_password():
         if request.method == 'POST':
-            email = request.form['email']
-            if 'email' in session:
-                session.pop('email', None)
+            return handle_forgot_password_attempt()
 
-            try:
-                valid_email = validate_email(email)
-                email = valid_email["email"]
-            except EmailNotValidError as e:
-                flash(str(e))
-                return redirect(url_for('forgot_password'))
+        return render_template('forgot_password.html')
 
-            user = App_Users.query.filter_by(user_email=email).first()
-            if user is None:
-                flash('No account found with that email')
-                return redirect(url_for('forgot_password'))
+    def handle_forgot_password_attempt():
+        email = request.form['email']
+        if 'email' in session:
+            session.pop('email', None)
 
-            # Generate a unique token for resetting password
-            serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
-            token = serializer.dumps(user.user_email, salt=os.environ.get('SECURITY_PASSWORD_SALT'))
+        try:
+            valid_email = validate_email(email)
+            email = valid_email["email"]
+        except EmailNotValidError as e:
+            flash(str(e))
+            return redirect(url_for('forgot_password'))
 
-            # Store the token in the user's record
-            user.reset_token = token
-            db.session.commit()
+        user = App_Users.query.filter_by(user_email=email).first()
+        if user is None:
+            flash('No account found with that email')
+            return redirect(url_for('forgot_password'))
 
-            # Send a password reset email to the user
-            subject = 'Password Reset Requested'
-            body = f"Dear {user.first_name},\n\nYou recently requested to reset your password for your account. Please click the link below to reset it:\n\n{url_for('reset_password', token=token, _external=True)}\n\nIf you did not request this change, you can ignore this email and your password will remain the same.\n\nBest regards,\n\nThe Chat App Team"
+        send_password_reset_email(user)
+        flash('Password reset link sent! Please check your email.')
+        return redirect(url_for('login'))
 
-            send_email(email, subject, body)
+    def send_password_reset_email(user):
+        serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
+        token = serializer.dumps(user.user_email, salt=os.environ.get('SECURITY_PASSWORD_SALT'))
 
-            flash('Password reset link sent! Please check your email.')
+        user.reset_token = token
+        db.session.commit()
+
+        subject = 'Password Reset Requested'
+        body = f"Dear {user.first_name},\n\nYou recently requested to reset your password for your account. Please click the link below to reset it:\n\n{url_for('reset_password', token=token, _external=True)}\n\nIf you did not request this change, you can ignore this email and your password will remain the same.\n\nBest regards,\n\nThe Chat App Team"
+
+        send_email(user.user_email, subject, body)
+
+    @app.route('/reset-password/<token>', methods=['GET', 'POST'])
+    def reset_password(token):
+        if 'email' in session:
+            return redirect(url_for('index'))
+
+        user, valid_token = validate_reset_password_token(token)
+        if user is None or not valid_token:
+            flash('Invalid email address or reset token!', 'error')
             return redirect(url_for('login'))
 
-        # This return statement will handle the GET method and render the forgot_password.html template
-        return render_template('forgot_password.html')
+        if request.method == 'POST':
+            return handle_password_reset(user, token)
+
+        return render_template('reset_password.html', token=token)
+
+    def validate_reset_password_token(token):
+        serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
+        try:
+            email = serializer.loads(
+                token,
+                salt=os.environ.get('SECURITY_PASSWORD_SALT'),
+                max_age=3600
+            )
+        except:
+            flash('The password reset link is invalid or has expired.', 'error')
+            return None, False
+
+        user = App_Users.query.filter_by(user_email=email).first()
+
+        return user, user is not None and user.reset_token == token
+
+    def handle_password_reset(user, token):
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if password != confirm_password:
+            flash('The passwords do not match.', 'error')
+            return render_template('reset_password.html', token=token)
+        if not is_password_strong(password):
+            flash('Your password is too weak.', 'error')
+            return render_template('reset_password.html', token=token)
+
+        user.password = generate_password_hash(password)
+        user.reset_token = None  # Invalidate the token
+        db.session.commit()
+        flash('Your password has been reset.', 'success')
+        return redirect(url_for('login'))
 
     def is_password_strong(password):
         """Check password strength."""
@@ -301,45 +391,7 @@ def configure_routes(app):
             return False
         return True
 
-    @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-    def reset_password(token):
-        if 'email' in session:
-            return redirect(url_for('index'))
-
-        serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
-        try:
-            email = serializer.loads(
-                token,
-                salt=os.environ.get('SECURITY_PASSWORD_SALT'),
-                max_age=3600
-            )
-        except:
-            flash('The password reset link is invalid or has expired.', 'error')
-            return redirect(url_for('login'))
-
-        user = App_Users.query.filter_by(user_email=email).first()
-        if user is None or user.reset_token != token:
-            flash('Invalid email address or reset token!', 'error')
-            return redirect(url_for('login'))
-
-        if request.method == 'POST':
-            password = request.form.get('password')
-            confirm_password = request.form.get('confirm_password')
-            if password != confirm_password:
-                flash('The passwords do not match.', 'error')
-                return render_template('reset_password.html', token=token)
-            if not is_password_strong(password):
-                flash('Your password is too weak.', 'error')
-                return render_template('reset_password.html', token=token)
-
-            user.password = generate_password_hash(password)
-            user.reset_token = None  # Invalidate the token
-            db.session.commit()
-            flash('Your password has been reset.', 'success')
-            return redirect(url_for('login'))
-
-        return render_template('reset_password.html', token=token)
-
+    # Routes used by users to request verification
     @app.route('/verify_profile', methods=['GET', 'POST'])
     @nocache
     def verify_profile():
@@ -351,99 +403,98 @@ def configure_routes(app):
         user = App_Users.query.filter_by(user_email=session['email']).first()
 
         if request.method == 'POST':
-            # Get the ID type and ID document from the form
-            id_number = request.form['id_number']
-            id_type = request.form['id_type']
-            id_document = request.files['id_document']
+            return handle_verification_submission(user)
 
-            if id_document and allowed_file(id_document.filename):
-                # Save the ID document in the verification_documents folder
-                filename = secure_filename(id_document.filename)
-                id_document.save(os.path.join(app.config['UPLOAD_FOLDER'], 'verification_documents', filename))
-
-                # Update the user's verification status to pending
-                user.verification_status = 'PENDING'
-                user.nid_or_passport = id_number
-                user.document_image = filename
-
-
-                # Commit the changes to the database
-                db.session.commit()
-
-                flash(
-                    'Your document has been submitted and is pending verification. You will be notified once the process is over.',
-                    'success')
-                return redirect(url_for('home'))
-
-            else:
-                flash('Invalid file type. Please upload a valid document.', 'error')
-                return redirect(url_for('verify_profile'))
-
-        # Render the verify_profile page when the request is a GET
         return render_template('verify_profile.html', user=user)
 
+    def handle_verification_submission(user):
+        # Get the ID type and ID document from the form
+        id_number = request.form['id_number']
+        id_type = request.form['id_type']
+        id_document = request.files['id_document']
+
+        if id_document and allowed_file(id_document.filename):
+            save_verification_document(user, id_number, id_type, id_document)
+            flash(
+                'Your document has been submitted and is pending verification. You will be notified once the process is over.',
+                'success')
+            return redirect(url_for('home'))
+
+        flash('Invalid file type. Please upload a valid document.', 'error')
+        return redirect(url_for('verify_profile'))
+
+    def save_verification_document(user, id_number, id_type, id_document):
+        # Save the ID document in the verification_documents folder
+        filename = secure_filename(id_document.filename)
+        id_document.save(os.path.join(app.config['UPLOAD_FOLDER'], 'verification_documents', filename))
+
+        # Update the user's verification status to pending
+        user.verification_status = 'PENDING'
+        user.nid_or_passport = id_number
+        user.document_image = filename
+
+        # Commit the changes to the database
+        db.session.commit()
+
+    # Admin routes to be used by the admin to verify users, or reject them
     @app.route('/admin', methods=['GET', 'POST'])
     def admin():
         if 'email' not in session:
-            flash('Unauthorized access', 'error')
-            return redirect(url_for('login'))
+            return unauthorized_access()
 
-        # Get all users with a pending status
-        users = App_Users.query.filter_by(verification_status='PENDING' or 'VERIFIED').all()
-
+        users = App_Users.query.filter_by(verification_status='PENDING').all()
         return render_template('admin.html', users=users)
 
     @app.route('/verify_user/<user_id>', methods=['GET'])
     def verify_user(user_id):
-        # Ensure the user is logged in and is an admin
-        if 'email' not in session or session['user_role'] != 'admin':
-            flash('Unauthorized access', 'error')
-            return redirect(url_for('login'))
+        if not is_admin_user():
+            return unauthorized_access()
 
-        user = App_Users.query.filter_by(id=user_id).first()
-
+        user = get_user(user_id)
         if not user:
-            flash('User not found', 'error')
-            return redirect(url_for('admin'))
+            return user_not_found()
 
-        # Update the user's verification status
         user.verification_status = 'VERIFIED'
-
         db.session.commit()
 
-        # Send a confirmation email
-        subject = 'Account Verified'
-        body = 'Congratulations, your account has been verified!'
-        send_email(user.user_email, subject, body)
+        send_verification_status_email(user, 'Account Verified', 'Congratulations, your account has been verified!')
 
         flash('User verified successfully', 'success')
-
         return redirect(url_for('admin'))
 
     @app.route('/reject_user/<user_id>', methods=['GET'])
     def reject_user(user_id):
-        # Ensure the user is logged in and is an admin
-        if 'email' not in session or session['user_role'] != 'admin':
-            flash('Unauthorized access', 'error')
-            return redirect(url_for('login'))
+        if not is_admin_user():
+            return unauthorized_access()
 
-        user = App_Users.query.filter_by(id=user_id).first()
-
+        user = get_user(user_id)
         if not user:
-            flash('User not found', 'error')
-            return redirect(url_for('admin'))
+            return user_not_found()
 
-        # Update the user's verification status
         user.verification_status = 'UNVERIFIED'
-
         db.session.commit()
 
-        # Send an email informing the user of the rejection
-        subject = 'Account Verification Failed'
-        body = 'Unfortunately, your account could not be verified. Please contact support for further assistance.'
-        send_email(user.user_email, subject, body)
+        send_verification_status_email(user, 'Account Verification Failed',
+                                       'Unfortunately, your account could not be verified. Please contact support for further assistance.')
 
         flash('User verification rejected', 'success')
-
         return redirect(url_for('admin'))
+
+    def is_admin_user():
+        return 'email' in session and session['user_role'] == 'admin'
+
+    def get_user(user_id):
+        return App_Users.query.filter_by(id=user_id).first()
+
+    def unauthorized_access():
+        flash('Unauthorized access', 'error')
+        return redirect(url_for('login'))
+
+    def user_not_found():
+        flash('User not found', 'error')
+        return redirect(url_for('admin'))
+
+    def send_verification_status_email(user, subject, body):
+        send_email(user.user_email, subject, body)
+
 
