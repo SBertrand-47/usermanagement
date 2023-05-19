@@ -66,6 +66,9 @@ def configure_routes(app):
     # Registration Route
     @app.route("/register", methods=["GET", "POST"])
     def register():
+        if request.method == 'GET':
+            return render_template('register.html', site_key=os.getenv('RECAPTCHA_SITE_KEY'))
+
         if request.method == 'POST':
             recaptcha_response = request.form.get('g-recaptcha-response')
 
