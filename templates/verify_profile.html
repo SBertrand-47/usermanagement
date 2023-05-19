@@ -97,7 +97,7 @@ body {
                 Upload Identification Document
             </div>
             <div class="card-body">
-                <form action="{{ url_for('verify_profile') }}" method="post" enctype="multipart/form-data">
+                <form id="profileForm" action="{{ url_for('verify_profile') }}" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="idType" class="form-label">ID Type</label>
                         <select class="form-select" id="idType" name="id_type">
