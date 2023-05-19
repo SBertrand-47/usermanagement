@@ -51,6 +51,8 @@ Thank you for choosing our application. We look forward to providing you with a 
     SENDGRID_API_KEY = YOUR_SENDGRID_API_KEY
     SQLALCHEMY_DATABASE_URI = YOUR_URI
     SQLALCHEMY_TRACK_MODIFICATIONS: False
+    RECAPTCHA_SECRET_KEY = YOUR_GOOGLE_RECAPTCHA_SECRET_KEY
+    RECAPTCHA_SITE_KEY = YOUR_SITE_RECAPTCHA_KEY
     
     ```
 
@@ -60,11 +62,11 @@ Thank you for choosing our application. We look forward to providing you with a 
 
 ## Usage Guide
 
-1. Open the application in your web browser. If running locally, it will be at `http://localhost:5000`.
+1. Open the application in your web browser. If running locally, it will be at `http://localhost:5000` locally or https://user-account-mgt.herokuapp.com/
 
 2. Click "Register" to create a new account. Fill out all the required fields. Upload yout profile picture, as it is required during registration
 
-3. Check your email for a verification link. Click the link to verify your email.
+3. Check your email for a verification link. Click the link to verify your email. ( Remember to check your spam folder, and Promotion, email will appear to be from "prochatapp@sgeneratorapp.online)
 
 4. Once verified, you can log in using your email and password, the system will send you an OTP each time you try to login so make sure your email is valid also the user will have 5 minutes to provide that OTP
    else it will expire and they will have to request a new one, also they will have 3 Attempts to give a valid OTP.
