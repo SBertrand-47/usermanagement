@@ -163,11 +163,12 @@ def configure_routes(app):
         return render_template('login.html')
 
     def handle_logged_in_user():
-        user = App_Users.query.filter_by(user_email=session['email']).first()
+        if not session.get('is_verified', False):
+            return redirect(url_for('otp_verification'))
 
+        user = App_Users.query.filter_by(user_email=session['email']).first()
         if user.user_role == 'admin':
             return redirect(url_for('admin'))
-
         return render_template('index.html', user=user)
 
     def handle_login_attempt():
@@ -194,6 +195,7 @@ def configure_routes(app):
             return redirect(url_for('admin'))
 
         send_otp_to_user(user.user_email)
+        session['is_verified'] = False
         return redirect(url_for('otp_verification'))
 
     def send_otp_to_user(email):
@@ -209,12 +211,12 @@ def configure_routes(app):
 
     @app.route('/home')
     def index():
-            if 'email' in session:
-                user = App_Users.query.filter_by(user_email=session['email']).first()
-                return render_template('index.html', user=user)
-            else:
-                flash('Please log in to access this page', 'error')
-                return redirect(url_for('login'))
+        if 'email' not in session or not session.get('is_verified', False):
+            flash('Please log in to access this page', 'error')
+            return redirect(url_for('login'))
+
+        user = App_Users.query.filter_by(user_email=session['email']).first()
+        return render_template('index.html', user=user)
 
 
     @app.route("/otp_verification", methods=["GET", "POST"])
@@ -237,7 +239,8 @@ def configure_routes(app):
                     return redirect(url_for('login'))
                 # Check if OTP is correct
                 if otp == session['otp']:
-                    # 'email' is already in the session
+                    ## 'email' is already in the session
+                    session['is_verified'] = True
                     return jsonify({'status': 'verified'})
                 else:
                     session['otp_attempts'] += 1
