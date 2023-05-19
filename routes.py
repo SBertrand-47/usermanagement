@@ -155,20 +155,7 @@ def configure_routes(app):
     @nocache
     def login():
         if 'email' in session:
-            user = App_Users.query.filter_by(user_email=session['email']).first()
-            if user.is_active:
-                if 'otp' in session:
-                    return redirect(url_for('otp_verification'))
-                return handle_logged_in_user()
-            else:
-                flash('Your account has not been activated yet. Please check your email and verify your account.',
-                      'error')
-                return redirect(url_for('login'))
-
-        if request.method == 'POST':
-            return handle_login_attempt()
-
-        return render_template('login.html')
+            return handle_logged_in_user()
 
         if request.method == 'POST':
             return handle_login_attempt()
@@ -229,6 +216,7 @@ def configure_routes(app):
                 flash('Please log in to access this page', 'error')
                 return redirect(url_for('login'))
 
+
     @app.route("/otp_verification", methods=["GET", "POST"])
     @nocache
     def otp_verification():
@@ -250,9 +238,6 @@ def configure_routes(app):
                 # Check if OTP is correct
                 if otp == session['otp']:
                     # 'email' is already in the session
-                    session.pop('otp', None)  # Clear the 'otp' from the session
-                    session.pop('otp_expiry', None)  # Clear the 'otp_expiry' from the session
-                    session.pop('otp_attempts', None)  # Clear the 'otp_attempts' from the session
                     return jsonify({'status': 'verified'})
                 else:
                     session['otp_attempts'] += 1
@@ -262,12 +247,8 @@ def configure_routes(app):
                         return jsonify({'status': 'incorrect', 'attempts_left': 3 - session['otp_attempts']})
             else:
                 return jsonify({'status': 'incorrect', 'attempts_left': 3 - session['otp_attempts']})
-
-        otp_expiry = session.get('otp_expiry', None)
-        otp_attempts = session.get('otp_attempts', None)
-        attempts_left = 3 - otp_attempts if otp_attempts is not None else 3
-        return render_template('otp_verification.html', otp_expiry=otp_expiry, attempts_left=attempts_left,
-                               login_url=url_for('login'))
+        return render_template('otp_verification.html', otp_expiry=session['otp_expiry'],
+                               attempts_left=3 - session['otp_attempts'], login_url=url_for('login'))
 
     #Verifying the Email, before login-in
 
@@ -420,11 +401,6 @@ def configure_routes(app):
 
         # Get the logged in user
         user = App_Users.query.filter_by(user_email=session['email']).first()
-
-        if 'otp' not in session or not user.is_active:
-            # User has not completed OTP verification or account is not active
-            flash('Please complete OTP verification first', 'error')
-            return redirect(url_for('otp_verification'))
 
         if request.method == 'POST':
             return handle_verification_submission(user)

@@ -97,7 +97,7 @@ body {
                 Upload Identification Document
             </div>
             <div class="card-body">
-                <form id="profileForm" action="{{ url_for('verify_profile') }}" method="post" enctype="multipart/form-data">
+                <form action="{{ url_for('verify_profile') }}" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="idType" class="form-label">ID Type</label>
                         <select class="form-select" id="idType" name="id_type">
@@ -123,62 +123,5 @@ body {
         </div>
     </div>
 </div>
-<link rel="stylesheet" href="https://unpkg.com/sweetalert2@11/dist/sweetalert2.min.css">
-<script src="https://unpkg.com/sweetalert2@11"></script>
 
-<script>
-    const profileForm = document.getElementById('profileForm');
-    const idTypeSelect = document.getElementById('idType');
-    const idNumberInput = document.getElementById('id_number');
-
-    profileForm.addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent form submission
-
-        // Validate ID Type
-        const idType = idTypeSelect.value;
-        if (idType === 'Choose...') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validation Error',
-                text: 'Please select an ID Type'
-            });
-            return;
-        }
-
-        // Validate ID Number based on ID Type
-        const idNumber = idNumberInput.value;
-        if (idNumber.trim() === '') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Validation Error',
-                text: 'ID Number is required'
-            });
-            return;
-        }
-
-        if (idType === 'national_id') {
-            if (!/^\d{16}$/.test(idNumber)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'ID Number must be 16 digits'
-                });
-                return;
-            }
-        } else if (idType === 'passport') {
-            if (!/^PC\d{6}$/.test(idNumber)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'ID Number must start with "PC" followed by 6 digits'
-                });
-                return;
-            }
-        }
-
-        // If all validations pass, submit the form
-        profileForm.submit();
-    });
-
-</script>
 {% endblock %}
