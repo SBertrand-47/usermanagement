@@ -80,6 +80,8 @@ def configure_routes(app):
 
             result = r.json()
 
+            print(result)
+
             if not result['success']:
                 flash('Invalid reCAPTCHA. Please try again.', 'error')
                 return render_template('register.html')
