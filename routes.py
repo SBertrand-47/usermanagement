@@ -84,7 +84,7 @@ def configure_routes(app):
 
             if not result['success']:
                 flash('Invalid reCAPTCHA. Please try again.', 'error')
-                return render_template('register.html')
+                return render_template('register.html', site_key=os.getenv('RECAPTCHA_SITE_KEY'))
 
 
             email, password, hashed_password, first_name, last_name, gender, age, date_of_birth, \
